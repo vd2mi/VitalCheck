@@ -3,21 +3,24 @@ import { collection, DocumentData, onSnapshot, query, QueryConstraint } from 'fi
 import { db } from '../services/firebase';
 
 export const useFirestoreCollection = <T extends DocumentData>(
-  collectionPath: string,
-  constraints: QueryConstraint[] = [],
-  dependencyKey = ''
+  collectionPath: string | null,
+  constraints: QueryConstraint[] | null,
+  ready: boolean
 ) => {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
 
-  // ✅ FIX: stabilize constraints so React won't infinite-resubscribe
-  const stableConstraints = useMemo(() => constraints, [dependencyKey]);
-
+  // ✅ If user is not ready, keep loading but do NOT run query
   useEffect(() => {
+    if (!ready || !collectionPath || !constraints) {
+      setLoading(true);
+      return;
+    }
+
     setLoading(true);
 
-    const q = query(collection(db, collectionPath), ...stableConstraints);
+    const q = query(collection(db, collectionPath), ...constraints);
 
     const unsubscribe = onSnapshot(
       q,
@@ -32,7 +35,7 @@ export const useFirestoreCollection = <T extends DocumentData>(
     );
 
     return unsubscribe;
-  }, [collectionPath, stableConstraints]);
+  }, [collectionPath, ready, JSON.stringify(constraints)]);
 
   return { data, loading, error };
 };

@@ -62,6 +62,7 @@ export const handleSignup = async ({ email, password, name, role }: SignupPayloa
 
 export const handleLogin = async (email: string, password: string) => {
   const credential = await signInWithEmailAndPassword(auth, email, password);
+  await credential.user.getIdToken(true);
   return mapFirebaseUser(credential.user);
 };
 
