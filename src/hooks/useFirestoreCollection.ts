@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { collection, DocumentData, onSnapshot, query, QueryConstraint } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
 export const useFirestoreCollection = <T extends DocumentData>(
-  collectionPath: string | null,
+  collectionPath: string,
   constraints: QueryConstraint[] | null,
   ready: boolean
 ) => {
@@ -11,10 +11,10 @@ export const useFirestoreCollection = <T extends DocumentData>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
 
-  // ✅ If user is not ready, keep loading but do NOT run query
   useEffect(() => {
-    if (!ready || !collectionPath || !constraints) {
-      setLoading(true);
+    if (!ready || !constraints) {
+      setData([]);
+      setLoading(false);
       return;
     }
 
@@ -35,7 +35,7 @@ export const useFirestoreCollection = <T extends DocumentData>(
     );
 
     return unsubscribe;
-  }, [collectionPath, ready, JSON.stringify(constraints)]);
+  }, [collectionPath, ready, constraints]);
 
   return { data, loading, error };
 };
