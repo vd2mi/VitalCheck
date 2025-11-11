@@ -35,7 +35,13 @@ const MedicationsList = () => {
         dose: form.dose,
         schedule: {
           frequency: form.frequency,
-          times: form.frequency === 'as-needed' ? [] : form.times.split(',').map((time) => time.trim())
+          times:
+            form.frequency === 'as-needed'
+              ? []
+              : typeof form.times === 'string'
+                ? form.times.split(',').map((time) => time.trim())
+                : []
+
         },
         startDate: form.startDate,
         endDate: form.endDate || undefined,

@@ -28,11 +28,11 @@ const SymptomForm = ({ onLogged }: SymptomFormProps) => {
       await addDoc(collection(db, 'symptoms'), {
         patientId: user.uid,
         text: sanitizeText(text),
-        tags: tags
-          .split(',')
-          .map((tag) => sanitizeText(tag))
-          .filter(Boolean),
-        timestamp: serverTimestamp()
+        tags:
+          typeof tags === 'string'
+            ? tags.split(',').map((tag: string) => sanitizeText(tag)).filter(Boolean)
+            : [],
+            timestamp: serverTimestamp()
       });
       setText('');
       setTags('');

@@ -11,39 +11,44 @@ export const useFirestoreCollection = <T extends DocumentData>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
 
-  // ✅ Stabilize constraints BEFORE useEffect
-  const constraintsKey = useMemo(
-    () =>
-      JSON.stringify(
-        constraints.map((c: any) => ({
-          type: c.type,
-          field: c.fieldPath?.canonicalString,
-          op: c.opStr,
-          value: c._value,
-        }))
-      ),
-    [constraints]
-  );
+  // Stabilize constraints so useEffect doesn't loop
+  const constraintsKey = useMemo(() => {
+    return JSON.stringify(
+      constraints.map((c: any) => ({
+        f: c.fieldPath?.canonicalString,
+        o: c.opStr,
+        v: c._value
+      }))
+    );
+  }, [constraints]);
 
   useEffect(() => {
     setLoading(true);
-
     const q = query(collection(db, collectionPath), ...constraints);
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        setData(snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as T) })));
+        const rows = snapshot.docs.map((doc) => {
+          const raw = doc.data() as any;
+          return {
+            ...raw,
+            id: doc.id,
+            uid: raw.uid ?? doc.id   // ✅ Ensure UID is ALWAYS correct
+          } as T;
+        });
+
+        setData(rows);
         setLoading(false);
       },
-      (err) => {
-        setError(err.message);
+      (e) => {
+        setError(e.message);
         setLoading(false);
       }
     );
 
     return unsubscribe;
-  }, [collectionPath, dependencyKey, constraintsKey]); // ✅ stable dependencies
+  }, [collectionPath, dependencyKey, constraintsKey]);
 
   return { data, loading, error };
 };
