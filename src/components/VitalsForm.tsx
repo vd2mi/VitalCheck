@@ -38,7 +38,7 @@ const VitalsForm = ({ onSuccess }: VitalsFormProps) => {
     try {
       await logVitals({
         ...values,
-        notes: values.notes ? sanitizeText(values.notes) : undefined,
+        notes: values.notes ? sanitizeText(values.notes) : '',
         patientId: user.uid
       });
       setValues(initialValues);
