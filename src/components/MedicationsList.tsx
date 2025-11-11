@@ -5,12 +5,18 @@ import { useFirestoreCollection } from '../hooks/useFirestoreCollection';
 import { createMedication, deleteMedication } from '../services/medsService';
 import { Medication } from '../types/models';
 
-const frequencyOptions: Medication['schedule']['frequency'][] = ['daily', 'weekly', 'monthly', 'as-needed'];
+const frequencyOptions: Medication['schedule']['frequency'][] = [
+  'daily',
+  'weekly',
+  'monthly',
+  'as-needed'
+];
 
 const MedicationsList = () => {
   const { user } = useAuth();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
   const [form, setForm] = useState({
     name: '',
     dose: '',
@@ -20,8 +26,15 @@ const MedicationsList = () => {
     endDate: ''
   });
 
-  const constraints = useMemo(() => (user ? [where('patientId', '==', user.uid)] : []), [user]);
-  const { data: medications, loading } = useFirestoreCollection<Medication>('medications', constraints, user?.uid ?? '');
+  const ready = !!user;
+
+  const constraints = useMemo(() => {
+    if (!user) return null;
+    return [where('patientId', '==', user.uid)];
+  }, [user]);
+
+  const { data: medications, loading } =
+    useFirestoreCollection<Medication>('medications', constraints, ready);
 
   if (!user) return null;
 
@@ -38,15 +51,13 @@ const MedicationsList = () => {
           times:
             form.frequency === 'as-needed'
               ? []
-              : typeof form.times === 'string'
-                ? form.times.split(',').map((time) => time.trim())
-                : []
-
+              : form.times.split(',').map(t => t.trim())
         },
         startDate: form.startDate,
         endDate: form.endDate || undefined,
         notes: ''
       });
+
       setFeedback('Medication added.');
       setForm({
         name: '',
@@ -80,34 +91,37 @@ const MedicationsList = () => {
           <p className="text-sm text-slate-500">Track prescription schedules and reminders.</p>
         </div>
       </div>
+
       <div className="mt-4 space-y-3">
         {loading && <p className="text-sm text-slate-500">Loading medications…</p>}
-        {!loading && medications.length === 0 && <p className="text-sm text-slate-500">No medications added yet.</p>}
+        {!loading && medications.length === 0 && (
+          <p className="text-sm text-slate-500">No medications added yet.</p>
+        )}
+
         {!loading &&
-          medications.map((medication) => (
+          medications.map(med => (
             <div
-              key={medication.id}
+              key={med.id}
               className="flex flex-col gap-2 rounded-lg border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
                 <p className="text-sm font-semibold text-slate-900">
-                  {medication.name}{' '}
-                  <span className="font-normal text-slate-500">({medication.dose})</span>
+                  {med.name}{' '}
+                  <span className="font-normal text-slate-500">({med.dose})</span>
                 </p>
                 <p className="text-xs text-slate-500">
-                  {medication.schedule.frequency}
-                  {medication.schedule.times?.length
-                    ? ` · ${medication.schedule.times.join(', ')}`
-                    : ''}
+                  {med.schedule.frequency}
+                  {med.schedule.times?.length ? ` · ${med.schedule.times.join(', ')}` : ''}
                 </p>
                 <p className="text-xs text-slate-400">
-                  {medication.startDate} {medication.endDate ? `→ ${medication.endDate}` : ''}
+                  {med.startDate} {med.endDate ? `→ ${med.endDate}` : ''}
                 </p>
               </div>
+
               <button
                 type="button"
-                onClick={() => handleDelete(medication.id)}
-                className="self-start rounded-md border border-red-200 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                onClick={() => handleDelete(med.id)}
+                className="self-start rounded-md border border-red-200 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
               >
                 Remove
               </button>
@@ -121,80 +135,84 @@ const MedicationsList = () => {
           <input
             required
             value={form.name}
-            onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
-            className="rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
+            className="rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm"
           />
         </label>
+
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-700">
           Dose
           <input
             required
             value={form.dose}
-            onChange={(event) => setForm((prev) => ({ ...prev, dose: event.target.value }))}
-            className="rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            onChange={e => setForm(prev => ({ ...prev, dose: e.target.value }))}
+            className="rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm"
           />
         </label>
+
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-700">
           Frequency
           <select
             value={form.frequency}
-            onChange={(event) => setForm((prev) => ({ ...prev, frequency: event.target.value as Medication['schedule']['frequency'] }))}
-            className="rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            onChange={e =>
+              setForm(prev => ({ ...prev, frequency: e.target.value as Medication['schedule']['frequency'] }))
+            }
+            className="rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm"
           >
-            {frequencyOptions.map((option) => (
+            {frequencyOptions.map(option => (
               <option key={option} value={option}>
                 {option}
               </option>
             ))}
           </select>
         </label>
+
         {form.frequency !== 'as-needed' && (
           <label className="flex flex-col gap-1 text-xs font-medium text-slate-700">
-            Times (HH:mm, comma separated)
+            Times (comma separated HH:mm)
             <input
               value={form.times}
-              onChange={(event) => setForm((prev) => ({ ...prev, times: event.target.value }))}
-              className="rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              onChange={e => setForm(prev => ({ ...prev, times: e.target.value }))}
+              className="rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm"
             />
           </label>
         )}
+
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-700">
           Start date
           <input
-            type="date"
             required
+            type="date"
             value={form.startDate}
-            onChange={(event) => setForm((prev) => ({ ...prev, startDate: event.target.value }))}
-            className="rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            onChange={e => setForm(prev => ({ ...prev, startDate: e.target.value }))}
+            className="rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm"
           />
         </label>
+
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-700">
           End date
           <input
             type="date"
             value={form.endDate}
-            onChange={(event) => setForm((prev) => ({ ...prev, endDate: event.target.value }))}
-            className="rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            onChange={e => setForm(prev => ({ ...prev, endDate: e.target.value }))}
+            className="rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm"
           />
         </label>
+
         <div className="sm:col-span-2">
           <button
             type="submit"
             disabled={pending}
-            className="inline-flex w-full items-center justify-center rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 disabled:bg-slate-300"
           >
             {pending ? 'Saving…' : 'Add Medication'}
           </button>
         </div>
       </form>
-      {feedback && (
-        <p className="mt-3 text-xs text-slate-500" role="status">
-          {feedback}
-        </p>
-      )}
+
+      {feedback && <p className="mt-3 text-xs text-slate-500">{feedback}</p>}
     </section>
   );
 };
 
 export default MedicationsList;
-
