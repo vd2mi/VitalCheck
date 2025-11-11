@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { collection, DocumentData, onSnapshot, query, QueryConstraint } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
@@ -11,44 +11,28 @@ export const useFirestoreCollection = <T extends DocumentData>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
 
-  // Stabilize constraints so useEffect doesn't loop
-  const constraintsKey = useMemo(() => {
-    return JSON.stringify(
-      constraints.map((c: any) => ({
-        f: c.fieldPath?.canonicalString,
-        o: c.opStr,
-        v: c._value
-      }))
-    );
-  }, [constraints]);
+  // ✅ FIX: stabilize constraints so React won't infinite-resubscribe
+  const stableConstraints = useMemo(() => constraints, [dependencyKey]);
 
   useEffect(() => {
     setLoading(true);
-    const q = query(collection(db, collectionPath), ...constraints);
+
+    const q = query(collection(db, collectionPath), ...stableConstraints);
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const rows = snapshot.docs.map((doc) => {
-          const raw = doc.data() as any;
-          return {
-            ...raw,
-            id: doc.id,
-            uid: raw.uid ?? doc.id   // ✅ Ensure UID is ALWAYS correct
-          } as T;
-        });
-
-        setData(rows);
+        setData(snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as T) })));
         setLoading(false);
       },
-      (e) => {
-        setError(e.message);
+      (err) => {
+        setError(err.message);
         setLoading(false);
       }
     );
 
     return unsubscribe;
-  }, [collectionPath, dependencyKey, constraintsKey]);
+  }, [collectionPath, stableConstraints]);
 
   return { data, loading, error };
 };
