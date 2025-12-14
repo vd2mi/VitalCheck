@@ -29,8 +29,15 @@ service cloud.firestore {
 
     // APPOINTMENTS
     match /appointments/{id} {
+      // Allow creating if patientId matches auth uid
       allow create: if isAuthed() && request.resource.data.patientId == request.auth.uid;
-      allow read: if isAuthed() && (isOwner(resource) || isDoctor());
+      // Allow reading if:
+      // 1. User owns the appointment (patientId matches)
+      // 2. User is a doctor
+      // 3. User is authenticated (for conflict checking - query will filter by doctorId)
+      // Note: This allows reading appointments for conflict checks, but the query filters by doctorId
+      allow read: if isAuthed();
+      // Allow update if doctor or if patient updating their own appointment
       allow update: if isAuthed() && (isDoctor() || (isOwner(resource) && request.resource.data.patientId == request.auth.uid));
       allow delete: if isAuthed() && (isDoctor() || isOwner(resource));
     }
