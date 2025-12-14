@@ -6,9 +6,10 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Check if user is a doctor
+    // Check if user is a doctor by reading their user document
     function isDoctor() {
-      return request.auth.token.role == 'doctor';
+      return isAuthed() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'doctor';
     }
 
     // Check if the user is reading/writing their own data
@@ -25,28 +26,30 @@ service cloud.firestore {
 
     // APPOINTMENTS
     match /appointments/{id} {
-      allow create: if isAuthed();
-      allow read, update, delete: if isDoctor() || isOwner(resource);
+      allow create: if isAuthed() && request.resource.data.patientId == request.auth.uid;
+      allow read: if isAuthed() && (isDoctor() || isOwner(resource));
+      allow update: if isAuthed() && (isDoctor() || isOwner(resource));
+      allow delete: if isAuthed() && (isDoctor() || isOwner(resource));
     }
 
     // MEDICATIONS
     match /medications/{id} {
-      allow create: if isAuthed();
-      allow read, update, delete: if isOwner(resource) || isDoctor();
+      allow create: if isAuthed() && request.resource.data.patientId == request.auth.uid;
+      allow read, update, delete: if isAuthed() && (isOwner(resource) || isDoctor());
     }
 
     // SYMPTOMS
     match /symptoms/{id} {
-      allow create: if isAuthed();
-      allow read: if isOwner(resource) || isDoctor();
-      allow delete: if isOwner(resource) || isDoctor();
+      allow create: if isAuthed() && request.resource.data.patientId == request.auth.uid;
+      allow read: if isAuthed() && (isOwner(resource) || isDoctor());
+      allow delete: if isAuthed() && (isOwner(resource) || isDoctor());
     }
 
     // VITALS
     match /vitals/{id} {
-      allow create: if isAuthed();
-      allow read: if isOwner(resource) || isDoctor();
-      allow delete: if isOwner(resource) || isDoctor();
+      allow create: if isAuthed() && request.resource.data.patientId == request.auth.uid;
+      allow read: if isAuthed() && (isOwner(resource) || isDoctor());
+      allow delete: if isAuthed() && (isOwner(resource) || isDoctor());
     }
   }
 }
