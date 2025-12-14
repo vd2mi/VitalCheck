@@ -1,0 +1,121 @@
+{
+  "users": [
+    {
+      "id": "patient-demo",
+      "email": "patient@example.com",
+      "name": "Avery Patient",
+      "role": "patient",
+      "createdAt": "2025-01-01T12:00:00.000Z"
+    },
+    {
+      "id": "doctor-demo",
+      "email": "doctor@example.com",
+      "name": "Dr. Morgan Care",
+      "role": "doctor",
+      "createdAt": "2025-01-01T12:00:00.000Z"
+    }
+  ],
+  "patients": [
+    {
+      "id": "patient-demo",
+      "userId": "patient-demo",
+      "name": "Avery Patient",
+      "dob": "1990-05-17",
+      "gender": "female",
+      "contact": "+1-555-0101"
+    }
+  ],
+  "vitals": [
+    {
+      "id": "vital-1",
+      "patientId": "patient-demo",
+      "timestamp": "2025-01-03T08:30:00.000Z",
+      "temperature": 36.9,
+      "heartRate": 78,
+      "bpSys": 118,
+      "bpDia": 76,
+      "spo2": 99,
+      "notes": "Morning baseline"
+    },
+    {
+      "id": "vital-2",
+      "patientId": "patient-demo",
+      "timestamp": "2025-01-04T20:10:00.000Z",
+      "temperature": 37.4,
+      "heartRate": 84,
+      "bpSys": 122,
+      "bpDia": 78,
+      "spo2": 97,
+      "notes": "Post workout"
+    }
+  ],
+  "symptoms": [
+    {
+      "id": "symptom-1",
+      "patientId": "patient-demo",
+      "text": "Mild headache with light sensitivity.",
+      "tags": ["headache", "light"],
+      "timestamp": "2025-01-04T14:00:00.000Z"
+    }
+  ],
+  "medications": [
+    {
+      "id": "med-1",
+      "patientId": "patient-demo",
+      "name": "Lisinopril",
+      "dose": "10mg",
+      "schedule": {
+        "frequency": "daily",
+        "times": ["08:00"]
+      },
+      "startDate": "2024-12-20",
+      "notes": "Take with breakfast"
+    },
+    {
+      "id": "med-2",
+      "patientId": "patient-demo",
+      "name": "Vitamin D",
+      "dose": "2000 IU",
+      "schedule": {
+        "frequency": "weekly",
+        "times": ["09:00"]
+      },
+      "startDate": "2025-01-01"
+    }
+  ],
+  "appointments": [
+    {
+      "id": "appt-1",
+      "patientId": "patient-demo",
+      "doctorId": "doctor-demo",
+      "createdAt": "2025-01-02T15:00:00.000Z",
+      "preferredTime": "2025-01-05T09:30:00.000Z",
+      "reason": "Blood pressure follow-up",
+      "status": "approved"
+    }
+  ],
+  "visits": [
+    {
+      "id": "visit-1",
+      "patientId": "patient-demo",
+      "doctorId": "doctor-demo",
+      "date": "2024-12-15",
+      "notes": "Routine checkup. Encouraged daily vitals logging."
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif-1",
+      "userId": "doctor-demo",
+      "type": "appointment",
+      "payload": {
+        "appointmentId": "appt-1",
+        "patientId": "patient-demo",
+        "preferredTime": "2025-01-05T09:30:00.000Z"
+      },
+      "read": false,
+      "createdAt": "2025-01-02T15:00:00.000Z"
+    }
+  ]
+}
+

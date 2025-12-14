@@ -1,0 +1,173 @@
+openapi: 3.1.0
+info:
+  title: VitalCheck API
+  version: 1.0.0
+  description: >
+    Optional REST surface for VitalCheck when using an Express/Firebase Functions wrapper.
+servers:
+  - url: https://{region}-{projectId}.cloudfunctions.net/api
+    variables:
+      region:
+        default: us-central1
+      projectId:
+        default: vitalcheck-dev
+paths:
+  /appointments:
+    post:
+      summary: Create appointment request
+      tags: [Appointments]
+      security:
+        - firebaseAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentRequest'
+      responses:
+        '201':
+          description: Appointment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+        '400':
+          description: Validation error
+        '409':
+          description: Appointment conflict
+  /appointments/{appointmentId}/status:
+    patch:
+      summary: Update appointment status
+      tags: [Appointments]
+      security:
+        - firebaseAuth: []
+      parameters:
+        - in: path
+          name: appointmentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: '#/components/schemas/AppointmentStatus'
+              required: [status]
+      responses:
+        '204':
+          description: Status updated
+        '403':
+          description: Forbidden
+  /patients/{patientId}/timeline:
+    get:
+      summary: Fetch patient timeline
+      tags: [Patients]
+      security:
+        - firebaseAuth: []
+      parameters:
+        - in: path
+          name: patientId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Timeline payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timeline'
+components:
+  securitySchemes:
+    firebaseAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AppointmentRequest:
+      type: object
+      properties:
+        doctorId:
+          type: string
+        preferredTime:
+          type: string
+          format: date-time
+        reason:
+          type: string
+      required: [doctorId, preferredTime, reason]
+    AppointmentStatus:
+      type: string
+      enum: [pending, approved, rejected, completed]
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: string
+        patientId:
+          type: string
+        doctorId:
+          type: string
+        preferredTime:
+          type: string
+          format: date-time
+        reason:
+          type: string
+        status:
+          $ref: '#/components/schemas/AppointmentStatus'
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, patientId, doctorId, preferredTime, reason, status, createdAt]
+    Timeline:
+      type: object
+      properties:
+        vitals:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              temperature:
+                type: number
+              heartRate:
+                type: integer
+        symptoms:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              text:
+                type: string
+              tags:
+                type: array
+                items:
+                  type: string
+        medications:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              dose:
+                type: string
+              schedule:
+                type: object
+                properties:
+                  frequency:
+                    type: string
+                  times:
+                    type: array
+                    items:
+                      type: string
+*** End Patch
+

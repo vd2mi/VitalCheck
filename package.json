@@ -1,0 +1,17 @@
+{
+  "name": "vitalcheck",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["frontend", "functions"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace frontend\" \"firebase emulators:start\"",
+    "lint": "npm run lint --workspace frontend && npm run lint --workspace functions",
+    "test": "npm run test --workspace frontend && npm run test --workspace functions",
+    "test:ci": "npm run coverage --workspace frontend && npm run test --workspace functions"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "firebase-tools": "^13.24.1"
+  }
+}
+

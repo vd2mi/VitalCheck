@@ -1,0 +1,36 @@
+{
+  "name": "vitalcheck-functions",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "20"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "rimraf lib && tsc",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "test": "vitest run",
+    "dev": "npm run build -- --watch",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^5.1.1",
+    "nodemailer": "^6.9.15",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^6.4.14",
+    "@types/node": "^20.17.9",
+    "@typescript-eslint/parser": "^8.46.4",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "prettier": "^3.6.2",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.8"
+  }
+}
+

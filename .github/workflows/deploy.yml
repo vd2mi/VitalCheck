@@ -1,0 +1,42 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm install
+      - name: Install workspace dependencies
+        run: |
+          npm install --workspace frontend
+          npm install --workspace functions
+      - name: Run tests
+        run: npm run test:ci
+      - name: Build frontend
+        run: npm run build --workspace frontend
+      - name: Deploy frontend to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          cd frontend
+          npx vercel deploy --prod --token "$VERCEL_TOKEN" --yes
+      - name: Deploy Firebase functions & Firestore
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: firebase deploy --only functions,firestore --token "$FIREBASE_TOKEN"
+
