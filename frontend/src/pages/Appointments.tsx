@@ -1,10 +1,11 @@
-import { FormEvent, useMemo, useState } from 'react';
-import { orderBy, where } from 'firebase/firestore';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { orderBy, where, doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
 import { useFirestoreCollection } from '../hooks/useFirestoreCollection';
 import { Appointment, AppUser } from '../types/models';
 import { requestAppointment } from '../services/appointmentService';
 import { formatDateTime } from '../utils/format';
+import { db } from '../services/firebase';
 
 const Appointments = () => {
   const { user } = useAuth();
@@ -26,6 +27,7 @@ const Appointments = () => {
   const { data: appointments } =
     useFirestoreCollection<Appointment>('appointments', appointmentConstraints, ready);
 
+  const [doctorNames, setDoctorNames] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     doctorId: '',
     preferredTime: '',
@@ -34,6 +36,40 @@ const Appointments = () => {
 
   const [feedback, setFeedback] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Fetch doctor names for appointments
+  useEffect(() => {
+    if (!appointments.length) return;
+
+    const fetchDoctorNames = async () => {
+      const uniqueDoctorIds = [...new Set(appointments.map(a => a.doctorId))];
+      const names: Record<string, string> = {};
+
+      await Promise.all(
+        uniqueDoctorIds.map(async (doctorId) => {
+          if (doctorNames[doctorId]) {
+            names[doctorId] = doctorNames[doctorId];
+            return;
+          }
+          try {
+            const doctorDoc = await getDoc(doc(db, 'users', doctorId));
+            if (doctorDoc.exists()) {
+              names[doctorId] = doctorDoc.data().name || 'Unknown doctor';
+            } else {
+              names[doctorId] = 'Unknown doctor';
+            }
+          } catch {
+            names[doctorId] = 'Unknown doctor';
+          }
+        })
+      );
+
+      setDoctorNames(prev => ({ ...prev, ...names }));
+    };
+
+    fetchDoctorNames();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appointments]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -140,7 +176,7 @@ const Appointments = () => {
               <div key={a.id} className="border rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-slate-900">
-                    {doctors.find(d => d.uid === a.doctorId)?.name ?? 'Unknown doctor'}
+                    {doctorNames[a.doctorId] || doctors.find(d => d.uid === a.doctorId)?.name || 'Unknown doctor'}
                   </span>
                   <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold">
                     {a.status}
