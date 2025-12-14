@@ -27,10 +27,13 @@ export const useFirestoreCollection = <T extends DocumentData>(
       (snapshot) => {
         setData(snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as T) })));
         setLoading(false);
+        setError(undefined);
       },
       (err) => {
+        console.error(`Firestore error for ${collectionPath}:`, err);
         setError(err.message);
         setLoading(false);
+        setData([]);
       }
     );
 

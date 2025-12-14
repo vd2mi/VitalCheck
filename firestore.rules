@@ -7,9 +7,12 @@ service cloud.firestore {
     }
 
     // Check if user is a doctor by reading their user document
+    // Returns false if document doesn't exist or role is not 'doctor'
     function isDoctor() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
       return isAuthed() && 
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'doctor';
+             userDoc != null &&
+             userDoc.data.role == 'doctor';
     }
 
     // Check if the user is reading/writing their own data
@@ -27,8 +30,8 @@ service cloud.firestore {
     // APPOINTMENTS
     match /appointments/{id} {
       allow create: if isAuthed() && request.resource.data.patientId == request.auth.uid;
-      allow read: if isAuthed() && (isDoctor() || isOwner(resource));
-      allow update: if isAuthed() && (isDoctor() || isOwner(resource));
+      allow read: if isAuthed() && (isOwner(resource) || isDoctor());
+      allow update: if isAuthed() && (isDoctor() || (isOwner(resource) && request.resource.data.patientId == request.auth.uid));
       allow delete: if isAuthed() && (isDoctor() || isOwner(resource));
     }
 
