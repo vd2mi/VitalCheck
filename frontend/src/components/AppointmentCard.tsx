@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
 import { AppointmentWithPatient, AppointmentStatus } from '../types/models';
 import { formatDateTime } from '../utils/format';
 import { updateAppointmentStatus } from '../services/appointmentService';
+import { db } from '../services/firebase';
 
 interface AppointmentCardProps {
   appointment: AppointmentWithPatient;
@@ -20,6 +22,27 @@ const AppointmentCard = ({ appointment, onStatusChange }: AppointmentCardProps) 
   const [pending, setPending] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [patientName, setPatientName] = useState<string | null>(appointment.patient?.name ?? null);
+
+  // Ensure we can always show a patient name for this appointment
+  useEffect(() => {
+    const loadPatientName = async () => {
+      if (!appointment.patientId || patientName) return;
+      try {
+        const snap = await getDoc(doc(db, 'users', appointment.patientId));
+        if (snap.exists()) {
+          const data = snap.data() as { name?: string };
+          setPatientName(data.name ?? 'Unknown patient');
+        } else {
+          setPatientName('Unknown patient');
+        }
+      } catch {
+        setPatientName('Unknown patient');
+      }
+    };
+
+    void loadPatientName();
+  }, [appointment.patientId, patientName]);
 
   const handleStatus = async (status: AppointmentStatus) => {
     setPending(true);
@@ -39,7 +62,7 @@ const AppointmentCard = ({ appointment, onStatusChange }: AppointmentCardProps) 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-sm font-semibold text-slate-900">
-            {appointment.patient?.name ?? 'Unknown patient'}
+            {patientName ?? appointment.patient?.name ?? 'Unknown patient'}
           </p>
           <p className="text-xs text-slate-500">{appointment.reason}</p>
         </div>
