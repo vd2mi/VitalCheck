@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { orderBy, where } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useFirestoreCollection } from '../hooks/useFirestoreCollection';
 import { AppointmentWithPatient } from '../types/models';
@@ -10,6 +11,7 @@ import { searchPatientsByContact } from '../services/appointmentService';
 const DoctorDashboard = () => {
   const { user } = useAuth();
   const ready = !!user;
+  const navigate = useNavigate();
 
   const constraints = useMemo(() => {
     if (!user) return null;
@@ -118,8 +120,12 @@ const DoctorDashboard = () => {
                   <p className="font-semibold">{r.name}</p>
                   <p className="text-xs text-slate-500">{r.email}</p>
                 </div>
-                <button className="bg-brand-600 text-white px-3 py-1 rounded text-xs shadow-sm">
-                  View timeline
+                <button
+                  type="button"
+                  onClick={() => navigate(`/doctor/patient/${r.userId}`)}
+                  className="bg-brand-600 text-white px-3 py-1 rounded text-xs shadow-sm"
+                >
+                  View history
                 </button>
               </div>
             ))}

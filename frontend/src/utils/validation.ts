@@ -9,6 +9,8 @@ export const VITAL_RANGES = {
   spo2: { min: 50, max: 100, label: 'SpO₂ (%)' }
 } as const;
 
+export type VitalSeverity = 'low' | 'medium' | 'high';
+
 export interface VitalFormValues {
   temperature: number | '';
   heartRate: number | '';
@@ -56,6 +58,42 @@ export function validateVitalForm(values: VitalFormValues): ValidationErrors<Vit
 
 export const sanitizeText = (value: string) =>
   value.trim().replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ');
+
+/**
+ * Very simple, hard-coded severity logic.
+ * This is intentionally rule-based (not medical grade) to satisfy the SDS requirement.
+ */
+export function getVitalSeverity(input: {
+  temperature: number;
+  heartRate: number;
+  bpSys: number;
+  bpDia: number;
+  spo2: number;
+}): VitalSeverity {
+  const { temperature, heartRate, bpSys, bpDia, spo2 } = input;
+
+  const isHigh =
+    temperature >= 38.5 ||
+    spo2 < 92 ||
+    bpSys >= 180 ||
+    bpDia >= 110 ||
+    heartRate >= 120 ||
+    heartRate <= 45;
+
+  if (isHigh) return 'high';
+
+  const isMedium =
+    (temperature >= 37.5 && temperature < 38.5) ||
+    (spo2 >= 92 && spo2 < 95) ||
+    (bpSys >= 140 && bpSys < 180) ||
+    (bpDia >= 90 && bpDia < 110) ||
+    (heartRate >= 100 && heartRate < 120) ||
+    (heartRate > 45 && heartRate < 55);
+
+  if (isMedium) return 'medium';
+
+  return 'low';
+}
 
 export function validateAppointmentDate(preferredTimeIso: string, now = new Date()): string | undefined {
   try {

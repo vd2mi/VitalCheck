@@ -1,29 +1,36 @@
 import { useMemo } from 'react';
 import { orderBy, where } from 'firebase/firestore';
+import { useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useFirestoreCollection } from '../hooks/useFirestoreCollection';
 import { formatDate, formatDateTime } from '../utils/format';
 import { SymptomEntry, Visit, VitalRecord } from '../types/models';
 import { getVitalSeverity } from '../utils/validation';
 
-const History = () => {
-  const { user } = useAuth();
-  const ready = !!user;
+const PatientHistoryForDoctor = () => {
+  const { patientId } = useParams<{ patientId: string }>();
+  const { user, isDoctor } = useAuth();
 
-  const symptomConstraints = useMemo(() => {
-    if (!user) return null;
-    return [where('patientId', '==', user.uid), orderBy('timestamp', 'desc')];
-  }, [user]);
+  if (!user) return <Navigate to="/login" replace />;
+  if (!isDoctor) return <Navigate to="/" replace />;
+  if (!patientId) return <Navigate to="/doctor" replace />;
 
-  const vitalConstraints = useMemo(() => {
-    if (!user) return null;
-    return [where('patientId', '==', user.uid), orderBy('timestamp', 'desc')];
-  }, [user]);
+  const ready = true;
 
-  const visitConstraints = useMemo(() => {
-    if (!user) return null;
-    return [where('patientId', '==', user.uid), orderBy('date', 'desc')];
-  }, [user]);
+  const symptomConstraints = useMemo(
+    () => [where('patientId', '==', patientId), orderBy('timestamp', 'desc')],
+    [patientId]
+  );
+
+  const vitalConstraints = useMemo(
+    () => [where('patientId', '==', patientId), orderBy('timestamp', 'desc')],
+    [patientId]
+  );
+
+  const visitConstraints = useMemo(
+    () => [where('patientId', '==', patientId), orderBy('date', 'desc')],
+    [patientId]
+  );
 
   const { data: symptoms } =
     useFirestoreCollection<SymptomEntry>('symptoms', symptomConstraints, ready);
@@ -39,7 +46,10 @@ const History = () => {
       <div className="mx-auto max-w-5xl space-y-8 px-4 pt-8">
 
         <section className="bg-white p-6 rounded-xl shadow-card">
-          <h1 className="text-2xl font-semibold">Health history</h1>
+          <h1 className="text-2xl font-semibold">Patient history</h1>
+          <p className="text-sm text-slate-500">
+            Reviewing timeline for patient ID: {patientId}
+          </p>
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
@@ -121,4 +131,6 @@ const History = () => {
   );
 };
 
-export default History;
+export default PatientHistoryForDoctor;
+
+

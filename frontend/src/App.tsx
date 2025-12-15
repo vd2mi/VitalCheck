@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Appointments from './pages/Appointments';
 import History from './pages/History';
+import PatientHistoryForDoctor from './pages/PatientHistoryForDoctor';
 import ProtectedRoute from './components/ProtectedRoute';
 import Nav from './components/Nav';
 import { useAuth } from './hooks/useAuth';
@@ -36,6 +37,7 @@ const App = () => (
         </Route>
         <Route element={<ProtectedRoute allowedRoles={['doctor']} />}>
           <Route path="doctor" element={<DoctorDashboard />} />
+          <Route path="doctor/patient/:patientId" element={<PatientHistoryForDoctor />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

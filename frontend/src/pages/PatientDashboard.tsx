@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useFirestoreCollection } from '../hooks/useFirestoreCollection';
 import { formatDateTime } from '../utils/format';
 import { VitalRecord, Medication } from '../types/models';
+import { getVitalSeverity } from '../utils/validation';
 
 const PatientDashboard = () => {
   const { user } = useAuth();
@@ -76,19 +77,43 @@ const PatientDashboard = () => {
               <div className="mt-4 space-y-3 text-sm">
                 {recentVitals.length === 0 && <p>No vitals yet.</p>}
 
-                {recentVitals.map(v => (
-                  <div key={v.id} className="border rounded-lg p-3">
-                    <p className="text-xs text-slate-500">
-                      {formatDateTime(v.timestamp)}
-                    </p>
-                    <p className="font-semibold">
-                      {v.temperature}°C • {v.heartRate} bpm
-                    </p>
-                    <p className="text-xs">
-                      BP {v.bpSys}/{v.bpDia} • SpO₂ {v.spo2}%
-                    </p>
-                  </div>
-                ))}
+                {recentVitals.map(v => {
+                  const severity = getVitalSeverity({
+                    temperature: v.temperature,
+                    heartRate: v.heartRate,
+                    bpSys: v.bpSys,
+                    bpDia: v.bpDia,
+                    spo2: v.spo2
+                  });
+
+                  const severityLabel =
+                    severity === 'high' ? 'HIGH' : severity === 'medium' ? 'MED' : 'LOW';
+                  const severityClass =
+                    severity === 'high'
+                      ? 'bg-red-100 text-red-800'
+                      : severity === 'medium'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-green-100 text-green-800';
+
+                  return (
+                    <div key={v.id} className="border rounded-lg p-3 space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs text-slate-500">
+                          {formatDateTime(v.timestamp)}
+                        </p>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${severityClass}`}>
+                          {severityLabel}
+                        </span>
+                      </div>
+                      <p className="font-semibold">
+                        {v.temperature}°C • {v.heartRate} bpm
+                      </p>
+                      <p className="text-xs">
+                        BP {v.bpSys}/{v.bpDia} • SpO₂ {v.spo2}%
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
