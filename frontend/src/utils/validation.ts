@@ -73,22 +73,28 @@ export function getVitalSeverity(input: {
   const { temperature, heartRate, bpSys, bpDia, spo2 } = input;
 
   const isHigh =
+    // Very high fever or significant hypothermia
     temperature >= 38.5 ||
-    spo2 < 92 ||
+    temperature < 35 ||
+    // Clearly low oxygen saturation
+    spo2 < 90 ||
     bpSys >= 180 ||
     bpDia >= 110 ||
-    heartRate >= 120 ||
-    heartRate <= 45;
+    heartRate >= 130 ||
+    heartRate <= 40;
 
   if (isHigh) return 'high';
 
   const isMedium =
+    // Mildly abnormal temperature
     (temperature >= 37.5 && temperature < 38.5) ||
-    (spo2 >= 92 && spo2 < 95) ||
+    (temperature >= 35 && temperature < 36) ||
+    // Moderately low oxygen saturation
+    (spo2 >= 90 && spo2 < 95) ||
     (bpSys >= 140 && bpSys < 180) ||
     (bpDia >= 90 && bpDia < 110) ||
-    (heartRate >= 100 && heartRate < 120) ||
-    (heartRate > 45 && heartRate < 55);
+    (heartRate >= 100 && heartRate < 130) ||
+    (heartRate > 40 && heartRate < 50);
 
   if (isMedium) return 'medium';
 
